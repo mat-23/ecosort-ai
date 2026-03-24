@@ -1,31 +1,35 @@
 # EcoSort AI: Waste-to-Wealth Intelligence ♻️📊
 
-**EcoSort AI** is an innovative AI-driven waste management solution developed for the **3MTT Program**. This project tackles the critical "Environment Pillar" by addressing the dual challenges of recycling awareness and logistics in local Nigerian communities.
+**EcoSort AI** is a high-performance web application designed to solve the waste management and logistical awareness problem in local Nigerian communities (LGAs). Developed for the **3MTT Program**, this project leverages advanced AI to bridge the gap between household waste and economic value.
 
-## 🚀 Project Overview
-EcoSort AI transforms how communities perceive and handle waste. By turning "Waste into Wealth," we provide users with the tools to identify recyclable materials, understand their market value, and connect with local logistics hubs for efficient disposal and reward collection.
+## 🚀 The Core Problem
+Many Nigerians want to recycle but face two major barriers:
+1. **Awareness**: They don't know which items are truly recyclable or their market value.
+2. **Logistics**: They don't know where to take the waste or how to schedule a pickup in their locality.
 
-## 🧠 Key AI Features
-- **Intelligent Vision Engine**: Leveraging **MobileNetV3** via TensorFlow.js, the app identifies waste items in real-time through camera feeds or image uploads.
-- **Context-Aware Labeling**: Technical AI classifications are mapped to user-friendly, commercial terms (e.g., "Soda / Soft Drink Bottle" for various pop/soda brands).
-- **Visual Verification**: Captures and stores real-time snapshots of scanned items in the history feed for visual proof and accountability.
-- **Smart Categorization**: Automatically detects and separates Plastic, Metal, Paper, and Glass to calculate precise rewards.
+## 🧠 The AI Solution
+EcoSort AI provides a seamless, "Snaps-to-Wealth" experience:
+- **Vision Engine**: Uses a pre-trained **MobileNetV3** model to identify objects in real-time via the camera or image uploads.
+- **Specific Labeling**: Unlike generic classifiers, EcoSort AI translates technical labels (e.g., "pop bottle") into commercial names (e.g., "Soda / Soft Drink Bottle").
+- **Financial Mapping**: Automatically maps identified materials to current market rates (Plastic: ₦250, Metal: ₦500, etc.).
+- **Visual Snapshots**: Captures real-world evidence of every scan for user history and accountability.
 
-## 🏘️ Logistics and Impact
-- **LGA Hubs Directory**: Integrated contact portal for hubs in **Ikeja**, **Lekki**, and **Mainland**.
-- **Interactive Pickup Requests**: One-tap Call and WhatsApp integration with pre-filled pickup messages for seamless logistics.
-- **Economic Empowerment**: A real-time rewards system in Naira (₦) that tracks the "Wealth" generated from every scanned item.
-- **Environmental Tracking**: High-precision CO₂ saving metrics (e.g., +2.1kg CO₂ per metal unit) to visualize the positive impact on the environment.
+## 🏘️ Logistical Edge (LGA Hubs)
+The app features an interactive **LGA Hubs Directory** that connects users directly with local recovery points in areas like **Ikeja, Lekki, and Mainland**:
+- **One-Tap Dialing**: Directly call local collectors.
+- **WhatsApp Integration**: Request pickups via WhatsApp with pre-filled, high-conversion messages.
 
-## 🏆 Success Metrics for 3MTT
-1. **Accessibility**: Web-app format ensures it runs on any smartphone with a camera.
-2. **Logistics Efficiency**: Reduces the "distance to recycling" by providing direct hub coordinates.
-3. **Behavioral Change**: Gamified rewards and environmental facts encourage consistent recycling habits.
+## 🛠️ Technology Stack
+- **Frontend**: React (Next.js 15+), Tailwind CSS (Vanilla CSS focus).
+- **AI/ML**: TensorFlow.js, MobileNetV3.
+- **Icons**: Lucide React.
+- **Design**: Premium Glassmorphism & High-Contrast Sustainability UI.
+
+## 📈 Impact Metrics
+- **Economic**: Real-time "Wealth" counter showing earned rewards in Naira (₦).
+- **Environmental**: High-precision CO₂ offset tracker (e.g., +1.5kg CO₂ per plastic unit).
 
 ---
-### Technical Setup
-The project is located in the `ecosort-mvp` directory. 
-- Run `npm install` followed by `npm run dev` to start the engine.
-- AI logic resides in `src/components/AICamera.tsx` and `src/lib/sorting.ts`.
 
-**Empowering Nigeria's green future with AI.** 🇳🇬♻️
+### Developed for 3MTT
+*Empowering local communities with AI-driven waste-to-wealth logistics.*

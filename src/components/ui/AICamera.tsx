@@ -5,10 +5,19 @@ import * as tf from "@tensorflow/tfjs";
 import * as mobilenet from "@tensorflow-models/mobilenet";
 import { Button } from "@/components/ui/button";
 import { Loader2, Camera, RefreshCw } from "lucide-react";
-import { formatItemName } from "@/lib/sorting";
+import { formatItemName, WasteCategory, categorizeItem, calculateReward } from "@/lib/sorting";
+import { LearningService } from "@/lib/learning";
 
 interface AICameraProps {
-  onDetected: (itemName: string, confidence: number, image?: string) => void;
+  onDetected: (
+    itemName: string, 
+    category: WasteCategory, 
+    cost: number, 
+    confidence: number, 
+    image?: string, 
+    isSmartMatch?: boolean,
+    embedding?: number[]
+  ) => void;
 }
 
 export default function AICamera({ onDetected }: AICameraProps) {
@@ -79,35 +88,57 @@ export default function AICamera({ onDetected }: AICameraProps) {
 
     setIsCapturing(true);
     try {
-      const predictions = await model.classify(videoRef.current);
-      if (predictions && predictions.length > 0) {
-        const topResult = predictions[0];
-        const rawName = topResult.className.split(",")[0];
-        const itemName = formatItemName(rawName);
-        const confidence = Math.round(topResult.probability * 100);
-        
-        // Capture the current frame from the video
-        let imageData = undefined;
-        if (canvasRef.current && videoRef.current) {
-          const canvas = canvasRef.current;
-          const video = videoRef.current;
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            imageData = canvas.toDataURL('image/jpeg', 0.6); // Compress slightly
-          }
+      const video = videoRef.current;
+      
+      // 1. Extract Neural Embedding (Feature Vector)
+      // This is the "brain" of the operation—it describes the object's appearance mathematically
+      const activation = tf.tidy(() => {
+        const tensor = tf.browser.fromPixels(video)
+          .resizeNearestNeighbor([224, 224])
+          .toFloat()
+          .expandDims();
+        return model.infer(tensor, true);
+      });
+      
+      const embedding = Array.from(activation.dataSync());
+      activation.dispose();
+
+      // 2. Standard MobileNet Classification
+      const predictions = await model.classify(video);
+      const topResult = predictions?.[0];
+      const rawName = topResult?.className.split(",")[0] || "Unknown Object";
+      
+      // 3. Consult Neural Memory for a "Smart Match"
+      // This allows the app to recognize objects it has seen before with extreme accuracy
+      const prediction = LearningService.predict(embedding, rawName);
+      
+      // 4. Capture current frame for the UI
+      let imageData = undefined;
+      if (canvasRef.current && videoRef.current) {
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          imageData = canvas.toDataURL('image/jpeg', 0.6);
         }
-        
-        setLastDetected(`${itemName} (${confidence}% Match)`);
-        onDetected(itemName, topResult.probability, imageData);
-      } else {
-        setError("Could not identify item. Try again.");
       }
+      
+      // 5. Update UI and notify parent
+      setLastDetected(`${prediction.name} (${Math.round((prediction.isSmartMatch ? 99 : (topResult?.probability || 0) * 100))}% Match)`);
+      onDetected(
+        prediction.name, 
+        prediction.category, 
+        prediction.cost, 
+        prediction.isSmartMatch ? 0.99 : (topResult?.probability || 0), 
+        imageData,
+        prediction.isSmartMatch,
+        embedding
+      );
     } catch (err) {
       console.error("Error during classification:", err);
-      setError("Classification failed. Please try again.");
+      setError("Vision system encountered an error. Please try again.");
     } finally {
       setIsCapturing(false);
     }
@@ -131,10 +162,12 @@ export default function AICamera({ onDetected }: AICameraProps) {
             const topResult = predictions[0];
             const rawName = topResult.className.split(",")[0];
             const itemName = formatItemName(rawName);
+            const category = categorizeItem(itemName);
+            const cost = calculateReward(category);
             const confidence = Math.round(topResult.probability * 100);
             
             setLastDetected(`${itemName} (${confidence}% Match)`);
-            onDetected(itemName, topResult.probability, event.target?.result as string);
+            onDetected(itemName, category, cost, topResult.probability, event.target?.result as string);
           } else {
             setError("Could not identify item in the image.");
           }

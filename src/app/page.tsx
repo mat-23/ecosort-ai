@@ -3,8 +3,10 @@
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, Trash2, History, Camera, Wallet, ArrowUpRight, Info, Phone, Leaf, MessageCircle } from "lucide-react";
-import AICamera from "@/components/AICamera";
+import AICamera from "@/components/ui/AICamera";
+import DetectionRefinery from "@/components/ui/DetectionRefinery";
 import { categorizeItem, calculateReward, WASTE_CATEGORIES, WasteCategory, formatItemName } from "@/lib/sorting";
+import { LearningService } from "@/lib/learning";
 import { loadData, saveData, STORAGE_KEYS } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 
@@ -63,6 +65,15 @@ export default function Home() {
   const [currentTip, setCurrentTip] = useState("");
   const [displayEarnings, setDisplayEarnings] = useState(0);
   const [displayCO2, setDisplayCO2] = useState(0);
+  const [pendingDetection, setPendingDetection] = useState<{
+    name: string;
+    category: WasteCategory;
+    cost: number;
+    confidence: number;
+    image?: string;
+    isSmartMatch: boolean;
+    embedding?: number[];
+  } | null>(null);
 
   // Load items on mount
   useEffect(() => {
@@ -115,21 +126,45 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [totalEarnings, totalCO2]);
 
-  const handleDetected = (itemName: string, confidence?: number, image?: string) => {
-    const category = categorizeItem(itemName);
-    const reward = calculateReward(category);
+  const handleDetected = (
+    itemName: string, 
+    category: WasteCategory, 
+    cost: number, 
+    confidence: number, 
+    image?: string, 
+    isSmartMatch?: boolean,
+    embedding?: number[]
+  ) => {
+    setPendingDetection({
+      name: itemName,
+      category,
+      cost,
+      confidence,
+      image,
+      isSmartMatch: !!isSmartMatch,
+      embedding
+    });
+  };
+
+  const handleConfirmDetection = (data: { name: string; category: WasteCategory; cost: number; teach: boolean }) => {
+    if (!pendingDetection) return;
+
+    if (data.teach && pendingDetection.embedding) {
+      LearningService.teach(pendingDetection.embedding, data.name, data.category, data.cost);
+    }
 
     const newItemObj: SortedItem = {
       id: Math.random().toString(36).substring(7),
-      name: itemName,
-      category,
-      reward,
-      confidence,
-      image,
+      name: data.name,
+      category: data.category,
+      reward: data.cost,
+      confidence: pendingDetection.confidence,
+      image: pendingDetection.image,
       timestamp: Date.now(),
     };
 
     setItems((prev) => [newItemObj, ...prev]);
+    setPendingDetection(null);
   };
 
   const handleManualAdd = (e: React.FormEvent) => {
@@ -439,8 +474,18 @@ export default function Home() {
               </Link>
             </div>
           </footer>
-        </div>
-      </main>
+          </div>
+        </main>
+        {pendingDetection && (
+        <DetectionRefinery
+          initialName={pendingDetection.name}
+          initialCategory={pendingDetection.category}
+          initialCost={pendingDetection.cost}
+          isSmartMatch={pendingDetection.isSmartMatch}
+          onConfirm={handleConfirmDetection}
+          onCancel={() => setPendingDetection(null)}
+        />
+      )}
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -460,5 +505,3 @@ export default function Home() {
     </div>
   );
 }
-
-
